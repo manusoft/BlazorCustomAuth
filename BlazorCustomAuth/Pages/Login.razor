@@ -1,0 +1,53 @@
+﻿@page "/login"
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject UserAccountService UserAccountService
+
+<h3>Login</h3>
+
+<div>
+    <div class="my-3">
+        <label>Username</label>
+        <input type="text" @bind="model.Username" class="form-control" placeholder="Username"/>
+    </div>
+    <div class="my-3">
+        <label>Password</label>
+        <input type="password" @bind="model.Password" class="form-control" placeholder="Password" />
+    </div>
+    <div class="my-3">
+        <button @onclick="LoginAsync" class="btn btn-primary">Login</button>
+    </div>
+</div>
+
+@code {
+    private class UserModel
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+    }
+
+    private UserModel model = new UserModel();
+
+    private async Task LoginAsync()
+    {
+        var userAccount = UserAccountService.GetUserByName(model.Username);
+
+        if (userAccount == null || userAccount.Password != model.Password)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Invalid username or password!!");
+
+            return;
+        }
+
+        var customAuthenticationStateProvider = (CustomAuthenticationStateProvider)AuthenticationStateProvider;
+
+        await customAuthenticationStateProvider.UpdateAuthenticationState(new UserSession
+            {
+                Username = userAccount.Username,
+                Role = userAccount.Role,
+            });
+
+        NavigationManager.NavigateTo("/", true);
+    }
+}
